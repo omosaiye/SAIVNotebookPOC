@@ -21,3 +21,7 @@ celery_app.conf.update(
 @celery_app.task(name="health.ping")
 def ping() -> dict[str, str]:
     return {"status": "ok", "service": settings.service_name}
+
+
+# register task modules
+from services.workers.app.jobs import ingestion_jobs as _ingestion_jobs  # noqa: F401,E402
