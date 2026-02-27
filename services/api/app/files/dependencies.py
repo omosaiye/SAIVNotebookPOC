@@ -15,6 +15,10 @@ _INGESTION_QUEUE = InMemoryIngestionQueue()
 _STORAGE = LocalObjectStorage(base_path=Path(".local-object-storage"))
 
 
+def get_file_repository() -> InMemoryFileRepository:
+    return _FILE_REPOSITORY
+
+
 def get_file_service() -> FileService:
     settings = load_api_settings()
     return FileService(
