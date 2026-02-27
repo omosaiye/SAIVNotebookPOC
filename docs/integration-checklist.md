@@ -39,6 +39,6 @@ Not implemented in Session A. Downstream sessions should provide:
 ## 4. Known stubs and planned replacement
 
 - Web app home page is scaffold-only. Session H/I will replace with product UX.
-- API exposes only `/health` endpoint. Sessions B-G will add feature routes.
+- API now exposes file library routes under `/api/v1/files` (upload, list, detail, status, reprocess, delete).
 - Worker contains only `health.ping` Celery task. Sessions D/E/G will add ingestion/indexing jobs.
 - No database migrations are included yet. Session B/C should add schema migrations.

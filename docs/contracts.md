@@ -142,13 +142,64 @@ This document freezes shared enum values and request/response payload shapes for
 Implemented by Session A:
 - `GET /health` (API startup and configuration health)
 
-Reserved contract routes for downstream sessions (shape frozen, behavior pending):
+Implemented by Session C:
 - `POST /api/v1/files/upload`
 - `GET /api/v1/files`
 - `GET /api/v1/files/{fileId}`
+- `GET /api/v1/files/{fileId}/status`
+- `POST /api/v1/files/{fileId}/reprocess`
+- `DELETE /api/v1/files/{fileId}`
+
+Reserved contract routes for downstream sessions (shape frozen, behavior pending):
 - `POST /api/v1/chat/query`
 - `POST /api/v1/upload-and-ask`
 - `GET /api/v1/upload-and-ask/{requestId}`
+
+### File upload request example
+
+`POST /api/v1/files/upload`
+
+Headers:
+- `X-Workspace-Id: ws_1`
+
+Headers:
+- `X-Workspace-Id: ws_1`
+- `X-File-Name: vendor_contract.pdf`
+- `Content-Type: application/pdf`
+
+Body:
+- raw binary document payload
+
+Response:
+
+```json
+{
+  "fileId": "file_123",
+  "status": "queued",
+  "message": "File accepted for processing"
+}
+```
+
+### File listing request example
+
+`GET /api/v1/files?status=queued&search=contract&includeDeleted=false`
+
+Headers:
+- `X-Workspace-Id: ws_1`
+
+Response:
+
+```json
+[
+  {
+    "id": "file_123",
+    "workspaceId": "ws_1",
+    "fileName": "vendor_contract.pdf",
+    "status": "queued",
+    "uploadedAt": "2026-01-01T00:00:00Z"
+  }
+]
+```
 
 ## 5. Lifecycle transitions
 
