@@ -40,6 +40,8 @@ class APISettings(BaseServiceSettings):
 class WorkerSettings(BaseServiceSettings):
     service_name: str = "workers"
     celery_queue: str = "default"
+    ingestion_max_retries: int = Field(default=3, ge=0)
+    object_store_base_path: str | None = None
 
 
 @lru_cache
