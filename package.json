@@ -1,0 +1,23 @@
+{
+  "name": "private-llm-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "infra:up": "docker compose --env-file infra/docker/.env -f infra/docker/docker-compose.yml up -d",
+    "infra:down": "docker compose --env-file infra/docker/.env -f infra/docker/docker-compose.yml down",
+    "web:dev": "npm run dev --workspace @private-llm/web",
+    "api:dev": "uvicorn services.api.app.main:app --host 0.0.0.0 --port 8000 --reload",
+    "worker:dev": "celery -A services.workers.app.celery_app:celery_app worker --loglevel=info",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "npm run format --workspaces --if-present",
+    "smoke": "./scripts/smoke/startup-smoke.sh"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  }
+}
