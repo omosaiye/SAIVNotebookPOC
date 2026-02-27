@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
+from services.api.app.chat.routes import router as chat_router
 from services.shared.config import load_api_settings
 
 
@@ -17,6 +18,8 @@ def create_app() -> FastAPI:
             "service": settings.service_name,
             "environment": settings.app_env,
         }
+
+    app.include_router(chat_router)
 
     return app
 
