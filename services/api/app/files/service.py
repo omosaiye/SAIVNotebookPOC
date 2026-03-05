@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from services.api.app.auth.audit import AuditService
 from services.api.app.files.models import FileRecord, ListFilesFilters
 from services.api.app.files.queue import IngestionQueue
-from services.api.app.files.repository import InMemoryFileRepository
+from services.api.app.files.repository import FileRepository
 from services.api.app.files.signature import FileValidationError, validate_file_type
 from services.api.app.files.storage import ObjectStorage
 from services.shared.contracts import FileDetail, FileSummary, UploadResponse
@@ -19,7 +19,7 @@ class FileService:
     def __init__(
         self,
         *,
-        repository: InMemoryFileRepository,
+        repository: FileRepository,
         storage: ObjectStorage,
         ingestion_queue: IngestionQueue,
         max_file_size_bytes: int,
@@ -67,7 +67,15 @@ class FileService:
         self._storage.put(object_key=object_key, payload=payload)
 
         queued = self._repository.transition_status(record, FileStatus.QUEUED)
-        self._ingestion_queue.enqueue(file_id=queued.id, workspace_id=workspace_id)
+        self._ingestion_queue.enqueue(
+            file_id=queued.id,
+            workspace_id=workspace_id,
+            object_key=queued.object_key,
+            file_name=queued.file_name,
+            mime_type=queued.mime_type,
+            size_bytes=queued.size_bytes,
+            correlation_id=f"upload_{queued.id}",
+        )
         self._audit_service.record_event(
             action="file_uploaded",
             entity_type="file",
@@ -116,6 +124,7 @@ class FileService:
         ]
 
     def get_file(self, *, workspace_id: str, file_id: str) -> FileDetail:
+        self._repository.refresh_file_status(file_id)
         row = self._get_workspace_file(workspace_id=workspace_id, file_id=file_id)
         return FileDetail(
             id=row.id,
@@ -142,7 +151,15 @@ class FileService:
             raise HTTPException(status_code=409, detail="Cannot reprocess a deleted file")
 
         replacement = self._repository.transition_status(row, FileStatus.QUEUED, error_message=None)
-        self._ingestion_queue.enqueue(file_id=replacement.id, workspace_id=workspace_id)
+        self._ingestion_queue.enqueue(
+            file_id=replacement.id,
+            workspace_id=workspace_id,
+            object_key=replacement.object_key,
+            file_name=replacement.file_name,
+            mime_type=replacement.mime_type,
+            size_bytes=replacement.size_bytes,
+            correlation_id=f"reprocess_{replacement.id}",
+        )
         self._audit_service.record_event(
             action="file_reprocess_requested",
             entity_type="file",

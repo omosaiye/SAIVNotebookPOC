@@ -17,8 +17,8 @@ from services.api.app.admin.models import (
     IngestionStageTimingMetrics,
 )
 from services.api.app.files.models import ListFilesFilters
-from services.api.app.files.queue import InMemoryIngestionQueue
-from services.api.app.files.repository import InMemoryFileRepository
+from services.api.app.files.queue import IngestionQueue
+from services.api.app.files.repository import FileRepository
 from services.shared.config import APISettings
 from services.shared.enums import FileStatus
 
@@ -80,8 +80,8 @@ class AdminService:
         self,
         *,
         settings_store: AdminSettingsStore,
-        file_repository: InMemoryFileRepository,
-        ingestion_queue: InMemoryIngestionQueue,
+        file_repository: FileRepository,
+        ingestion_queue: IngestionQueue,
         audit_service: AuditService,
     ) -> None:
         self._settings_store = settings_store
@@ -132,7 +132,7 @@ class AdminService:
             latest_action_by_file.setdefault(event.entity_id, event)
 
         queue_job_by_file: dict[str, object] = {}
-        for job in reversed(self._ingestion_queue.jobs):
+        for job in reversed(self._ingestion_queue.list_jobs()):
             if job.workspace_id == workspace_id:
                 queue_job_by_file.setdefault(job.file_id, job)
 
@@ -185,7 +185,9 @@ class AdminService:
             key = row.status.value
             status_counts[key] = status_counts.get(key, 0) + 1
 
-        queue_jobs = [job for job in self._ingestion_queue.jobs if job.workspace_id == workspace_id]
+        queue_jobs = [
+            job for job in self._ingestion_queue.list_jobs() if job.workspace_id == workspace_id
+        ]
         queue_ages = [(now - job.enqueued_at).total_seconds() for job in queue_jobs]
 
         in_flight_statuses = {

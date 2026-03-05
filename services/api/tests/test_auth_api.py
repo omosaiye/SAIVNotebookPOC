@@ -22,6 +22,7 @@ def seed_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("EMBEDDING_MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2")
     monkeypatch.setenv("LLM_ENDPOINT", "http://localhost:8080/v1/chat/completions")
     monkeypatch.setenv("LLM_MODEL", "private-llm-model")
+    monkeypatch.setenv("INGESTION_QUEUE_BACKEND", "in_memory")
     monkeypatch.setenv("AUTH_SEED_ENABLED", "true")
     monkeypatch.setenv("AUTH_SEED_USER_ID", "user_seed_owner")
     monkeypatch.setenv("AUTH_SEED_EMAIL", "owner@local.dev")

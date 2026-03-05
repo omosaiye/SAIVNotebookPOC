@@ -7,7 +7,7 @@ from fastapi import HTTPException
 import psycopg
 
 from services.api.app.files.models import ListFilesFilters
-from services.api.app.files.repository import InMemoryFileRepository
+from services.api.app.files.repository import FileRepository
 from services.shared.embedding import cosine_similarity, deterministic_embedding
 from services.shared.enums import FileStatus, UploadAndAskScope
 
@@ -38,7 +38,7 @@ class RetrievalService:
 
 
 class FileBackedRetrievalService(RetrievalService):
-    def __init__(self, *, file_repository: InMemoryFileRepository) -> None:
+    def __init__(self, *, file_repository: FileRepository) -> None:
         self._file_repository = file_repository
 
     def retrieve(

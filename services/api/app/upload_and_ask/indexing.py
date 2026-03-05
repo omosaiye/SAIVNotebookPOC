@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import psycopg
 
-from services.api.app.files.repository import InMemoryFileRepository
+from services.api.app.files.repository import FileRepository
 from services.shared.enums import FileStatus
 
 
@@ -30,7 +30,7 @@ class FileRepositoryIndexReadinessGateway(IndexReadinessGateway):
     def __init__(
         self,
         *,
-        file_repository: InMemoryFileRepository,
+        file_repository: FileRepository,
         database_url: str | None = None,
     ) -> None:
         self._file_repository = file_repository

@@ -41,7 +41,7 @@ def process_file_ingestion(
         repository=repository,
         parser=DoclingFirstParserService(),
         ocr_service=OCRService(),
-        object_store=ObjectStoreClient(),
+        object_store=ObjectStoreClient(base_path=settings.object_store_base_path),
         indexer=ChunkIndexingService(
             repository=repository,
             embedding_model_name=settings.embedding_model_name,

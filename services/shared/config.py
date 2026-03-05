@@ -35,6 +35,9 @@ class APISettings(BaseServiceSettings):
     service_name: str = "api"
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    celery_queue: str = "default"
+    ingestion_queue_backend: str = "celery"
+    object_store_base_path: str = ".local-object-storage"
     auth_session_ttl_minutes: int = Field(default=480, ge=1)
     auth_seed_enabled: bool = True
     auth_seed_user_id: str = "user_seed_owner"
@@ -47,7 +50,7 @@ class WorkerSettings(BaseServiceSettings):
     service_name: str = "workers"
     celery_queue: str = "default"
     ingestion_max_retries: int = Field(default=3, ge=0)
-    object_store_base_path: str | None = None
+    object_store_base_path: str = ".local-object-storage"
 
 
 @lru_cache
