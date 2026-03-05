@@ -12,6 +12,12 @@ Implemented in Session B:
 - US-005: workspace membership authorization dependency for protected endpoints
 - US-006: audit event recording for auth and API mutating actions
 
+Implemented in Session F:
+- US-021: chat session and message persistence APIs (in-memory)
+- US-022, US-023, US-024: retrieval, prompting, and LLM adapter interfaces with local stub implementations
+- US-025: grounded query endpoint at `POST /api/v1/chat/query`
+- US-026: citation assembly from retrieved chunks
+
 ## Repository layout
 
 - `apps/web` - Next.js startup scaffold
@@ -143,7 +149,7 @@ python3 -m pytest
 
 ## 8. Intentional stubs in this phase
 
-- Retrieval indexing and chat query endpoint implementation are still pending (Sessions E/F)
+- Retrieval and LLM execution currently use local stub implementations pending full production adapters
 - Frontend product UX is still scaffold-level (Sessions H/I pending)
 - No production deployment manifests
 - No database migrations yet

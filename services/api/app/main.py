@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from services.api.app.auth.router import router as auth_router
+from services.api.app.chat.router import router as chat_router
 from services.api.app.files.router import router as files_router
 from services.api.app.upload_and_ask.router import router as upload_and_ask_router
 from services.shared.config import load_api_settings
@@ -21,6 +22,7 @@ def create_app() -> FastAPI:
         }
 
     app.include_router(auth_router)
+    app.include_router(chat_router)
     app.include_router(files_router)
     app.include_router(upload_and_ask_router)
 

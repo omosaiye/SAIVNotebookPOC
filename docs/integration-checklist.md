@@ -31,6 +31,8 @@
 4. Verify auth login and profile:
    - `curl -X POST http://localhost:8000/api/v1/auth/login -H 'Content-Type: application/json' -d '{"email":"owner@local.dev","password":"dev-password"}'`
    - `curl http://localhost:8000/api/v1/auth/me -H 'Authorization: Bearer <token>'`
+5. Verify chat query route exists:
+   - `curl -X POST http://localhost:8000/api/v1/chat/query -H 'Authorization: Bearer <token>' -H 'X-Workspace-Id: ws_1' -H 'Content-Type: application/json' -d '{"workspaceId":"ws_1","chatSessionId":null,"mode":"grounded","query":"test","scope":"workspace","fileIds":[]}'`
 
 ## 3. Seed data steps
 

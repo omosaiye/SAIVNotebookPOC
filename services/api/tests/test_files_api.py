@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from services.api.app.auth.dependencies import reset_auth_dependencies
+from services.api.app.chat.dependencies import reset_chat_dependencies
 from services.api.app.files.dependencies import reset_file_dependencies
 from services.api.app.main import create_app
 from services.shared.config import load_api_settings
@@ -32,6 +33,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     seed_environment(monkeypatch)
     load_api_settings.cache_clear()
     reset_auth_dependencies()
+    reset_chat_dependencies()
     reset_file_dependencies()
     app = create_app()
     return TestClient(app)

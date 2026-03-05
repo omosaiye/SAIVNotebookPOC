@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from services.api.app.auth.dependencies import reset_auth_dependencies
+from services.api.app.chat.dependencies import reset_chat_dependencies
 from services.api.app.files.dependencies import reset_file_dependencies
 from services.api.app.main import create_app
 from services.api.app.upload_and_ask.dependencies import reset_upload_and_ask_dependencies
@@ -33,6 +34,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     seed_environment(monkeypatch)
     load_api_settings.cache_clear()
     reset_auth_dependencies()
+    reset_chat_dependencies()
     reset_file_dependencies()
     reset_upload_and_ask_dependencies()
     return TestClient(create_app())
@@ -111,4 +113,3 @@ def test_file_upload_records_audit_event(client: TestClient) -> None:
     assert events.status_code == 200
     actions = {item["action"] for item in events.json()}
     assert "file_uploaded" in actions
-
