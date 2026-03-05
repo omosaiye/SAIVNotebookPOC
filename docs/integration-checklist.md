@@ -28,6 +28,9 @@
 1. Run `./scripts/smoke/startup-smoke.sh`.
 2. Confirm infra is healthy with `docker compose -f infra/docker/docker-compose.yml ps`.
 3. Hit API health endpoint: `curl http://localhost:8000/health`.
+4. Verify auth login and profile:
+   - `curl -X POST http://localhost:8000/api/v1/auth/login -H 'Content-Type: application/json' -d '{"email":"owner@local.dev","password":"dev-password"}'`
+   - `curl http://localhost:8000/api/v1/auth/me -H 'Authorization: Bearer <token>'`
 
 ## 3. Seed data steps
 
@@ -39,6 +42,7 @@ Not implemented in Session A. Downstream sessions should provide:
 ## 4. Known stubs and planned replacement
 
 - Web app home page is scaffold-only. Session H/I will replace with product UX.
+- API protected routes now require `Authorization: Bearer <token>` plus `X-Workspace-Id`.
 - API now exposes file library routes under `/api/v1/files` (upload, list, detail, status, reprocess, delete).
 - Worker contains only `health.ping` Celery task. Sessions D/E/G will add ingestion/indexing jobs.
 - No database migrations are included yet. Session B/C should add schema migrations.

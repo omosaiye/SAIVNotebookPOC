@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
 
+from services.api.app.auth.audit import AuditService
 from services.api.app.files.service import FileService
 from services.api.app.upload_and_ask.chat_backend import GroundedQueryExecutor
 from services.api.app.upload_and_ask.indexing import IndexReadinessGateway
@@ -25,11 +26,13 @@ class UploadAndAskService:
         repository: InMemoryPendingUploadAndAskRepository,
         index_readiness: IndexReadinessGateway,
         grounded_query_executor: GroundedQueryExecutor,
+        audit_service: AuditService,
     ) -> None:
         self._file_service = file_service
         self._repository = repository
         self._index_readiness = index_readiness
         self._grounded_query_executor = grounded_query_executor
+        self._audit_service = audit_service
 
     async def create_request(
         self,
@@ -38,6 +41,7 @@ class UploadAndAskService:
         query: str,
         files: list[UploadFile],
         scope: UploadAndAskScope,
+        actor_user_id: str,
     ) -> UploadAndAskCreateResult:
         if not query.strip():
             raise HTTPException(status_code=400, detail="Query is required")
@@ -55,11 +59,16 @@ class UploadAndAskService:
                     filename=item.filename or "upload.bin",
                     payload=payload,
                     declared_mime=item.content_type,
+                    actor_user_id=actor_user_id,
                 )
                 uploaded_file_ids.append(upload_result.file_id)
         except Exception:
             for file_id in uploaded_file_ids:
-                self._file_service.delete(workspace_id=workspace_id, file_id=file_id)
+                self._file_service.delete(
+                    workspace_id=workspace_id,
+                    file_id=file_id,
+                    actor_user_id=actor_user_id,
+                )
             raise
 
         now = datetime.now(tz=timezone.utc)
@@ -72,9 +81,18 @@ class UploadAndAskService:
             status=PendingRequestStatus.WAITING_FOR_INDEX,
             createdAt=now,
             updatedAt=now,
+            createdBy=actor_user_id,
             citations=[],
         )
         self._repository.create(record)
+        self._audit_service.record_event(
+            action="upload_and_ask_requested",
+            entity_type="pending_request",
+            entity_id=record.request_id,
+            actor_user_id=actor_user_id,
+            workspace_id=workspace_id,
+            metadata={"fileCount": len(uploaded_file_ids), "scope": scope.value},
+        )
 
         return UploadAndAskCreateResult(
             requestId=record.request_id,
@@ -96,6 +114,7 @@ class UploadAndAskService:
                 file_ids=record.file_ids,
             )
             if readiness.terminal_failure:
+                was_failed = record.status == PendingRequestStatus.FAILED
                 record = self._repository.update(
                     record.model_copy(
                         update={
@@ -105,6 +124,15 @@ class UploadAndAskService:
                         }
                     )
                 )
+                if not was_failed:
+                    self._audit_service.record_event(
+                        action="upload_and_ask_failed",
+                        entity_type="pending_request",
+                        entity_id=record.request_id,
+                        actor_user_id=record.created_by,
+                        workspace_id=record.workspace_id,
+                        metadata={"reason": "required_file_terminal_failure"},
+                    )
             elif readiness.all_indexed and record.status == PendingRequestStatus.WAITING_FOR_INDEX:
                 executing = self._repository.update(
                     record.model_copy(
@@ -132,6 +160,14 @@ class UploadAndAskService:
                             }
                         )
                     )
+                    self._audit_service.record_event(
+                        action="upload_and_ask_failed",
+                        entity_type="pending_request",
+                        entity_id=record.request_id,
+                        actor_user_id=record.created_by,
+                        workspace_id=record.workspace_id,
+                        metadata={"reason": "execution_error"},
+                    )
                 else:
                     record = self._repository.update(
                         executing.model_copy(
@@ -142,6 +178,14 @@ class UploadAndAskService:
                                 "citations": grounded.citations,
                             }
                         )
+                    )
+                    self._audit_service.record_event(
+                        action="upload_and_ask_completed",
+                        entity_type="pending_request",
+                        entity_id=record.request_id,
+                        actor_user_id=record.created_by,
+                        workspace_id=record.workspace_id,
+                        metadata={"citationCount": len(record.citations)},
                     )
 
         file_statuses = {

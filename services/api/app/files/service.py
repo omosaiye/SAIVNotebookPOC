@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from fastapi import HTTPException
 
+from services.api.app.auth.audit import AuditService
 from services.api.app.files.models import FileRecord, ListFilesFilters
 from services.api.app.files.queue import IngestionQueue
 from services.api.app.files.repository import InMemoryFileRepository
@@ -22,11 +23,13 @@ class FileService:
         storage: ObjectStorage,
         ingestion_queue: IngestionQueue,
         max_file_size_bytes: int,
+        audit_service: AuditService,
     ) -> None:
         self._repository = repository
         self._storage = storage
         self._ingestion_queue = ingestion_queue
         self._max_file_size_bytes = max_file_size_bytes
+        self._audit_service = audit_service
 
     async def upload(
         self,
@@ -35,6 +38,7 @@ class FileService:
         filename: str,
         payload: bytes,
         declared_mime: str | None,
+        actor_user_id: str | None = None,
     ) -> UploadResponse:
         if not payload:
             raise HTTPException(status_code=400, detail="File is empty")
@@ -64,6 +68,19 @@ class FileService:
 
         queued = self._repository.transition_status(record, FileStatus.QUEUED)
         self._ingestion_queue.enqueue(file_id=queued.id, workspace_id=workspace_id)
+        self._audit_service.record_event(
+            action="file_uploaded",
+            entity_type="file",
+            entity_id=queued.id,
+            actor_user_id=actor_user_id,
+            workspace_id=workspace_id,
+            metadata={
+                "fileName": filename,
+                "mimeType": mime_type,
+                "sizeBytes": len(payload),
+                "status": queued.status.value,
+            },
+        )
 
         return UploadResponse(
             fileId=queued.id,
@@ -113,13 +130,27 @@ class FileService:
             errorMessage=row.error_message,
         )
 
-    def reprocess(self, *, workspace_id: str, file_id: str) -> UploadResponse:
+    def reprocess(
+        self,
+        *,
+        workspace_id: str,
+        file_id: str,
+        actor_user_id: str | None = None,
+    ) -> UploadResponse:
         row = self._get_workspace_file(workspace_id=workspace_id, file_id=file_id)
         if row.status == FileStatus.DELETED:
             raise HTTPException(status_code=409, detail="Cannot reprocess a deleted file")
 
         replacement = self._repository.transition_status(row, FileStatus.QUEUED, error_message=None)
         self._ingestion_queue.enqueue(file_id=replacement.id, workspace_id=workspace_id)
+        self._audit_service.record_event(
+            action="file_reprocess_requested",
+            entity_type="file",
+            entity_id=replacement.id,
+            actor_user_id=actor_user_id,
+            workspace_id=workspace_id,
+            metadata={"status": replacement.status.value},
+        )
 
         return UploadResponse(
             fileId=replacement.id,
@@ -127,11 +158,25 @@ class FileService:
             message="File reprocess accepted and re-queued",
         )
 
-    def delete(self, *, workspace_id: str, file_id: str) -> UploadResponse:
+    def delete(
+        self,
+        *,
+        workspace_id: str,
+        file_id: str,
+        actor_user_id: str | None = None,
+    ) -> UploadResponse:
         row = self._get_workspace_file(workspace_id=workspace_id, file_id=file_id)
         tombstone = self._repository.transition_status(row, FileStatus.DELETING)
         self._storage.delete(object_key=tombstone.object_key)
         deleted = self._repository.transition_status(tombstone, FileStatus.DELETED)
+        self._audit_service.record_event(
+            action="file_deleted",
+            entity_type="file",
+            entity_id=deleted.id,
+            actor_user_id=actor_user_id,
+            workspace_id=workspace_id,
+            metadata={"status": deleted.status.value},
+        )
 
         return UploadResponse(fileId=deleted.id, status=deleted.status, message="File deleted")
 

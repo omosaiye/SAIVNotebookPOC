@@ -19,6 +19,7 @@ class PendingUploadAndAskRecord(BaseModel):
     status: PendingRequestStatus
     created_at: datetime = Field(alias="createdAt")
     updated_at: datetime = Field(alias="updatedAt")
+    created_by: str = Field(alias="createdBy")
     answer: str | None = None
     citations: list[CitationResponse] = Field(default_factory=list)
     error_message: str | None = Field(default=None, alias="errorMessage")

@@ -35,6 +35,12 @@ class APISettings(BaseServiceSettings):
     service_name: str = "api"
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    auth_session_ttl_minutes: int = Field(default=480, ge=1)
+    auth_seed_enabled: bool = True
+    auth_seed_user_id: str = "user_seed_owner"
+    auth_seed_email: str = "owner@local.dev"
+    auth_seed_password: str = "dev-password"
+    auth_seed_workspace_ids: str = "ws_1"
 
 
 class WorkerSettings(BaseServiceSettings):
