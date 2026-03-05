@@ -5,6 +5,7 @@ from celery import Task
 from services.shared.config import load_worker_settings
 from services.shared.enums import FileStatus
 from services.workers.app.celery_app import celery_app
+from services.workers.app.indexing.service import ChunkIndexingService
 from services.workers.app.models import IngestionJob
 from services.workers.app.orchestration.ingestion_service import (
     IngestionOrchestrationService,
@@ -41,6 +42,10 @@ def process_file_ingestion(
         parser=DoclingFirstParserService(),
         ocr_service=OCRService(),
         object_store=ObjectStoreClient(),
+        indexer=ChunkIndexingService(
+            repository=repository,
+            embedding_model_name=settings.embedding_model_name,
+        ),
     )
 
     job = IngestionJob(

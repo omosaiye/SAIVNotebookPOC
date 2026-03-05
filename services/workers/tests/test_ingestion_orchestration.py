@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from services.workers.app.indexing.service import ChunkIndexingService
 from services.workers.app.models import IngestionJob
 from services.workers.app.orchestration.ingestion_service import IngestionOrchestrationService
 from services.workers.app.parsers.docling_service import DoclingFirstParserService
@@ -14,11 +15,16 @@ def test_ingestion_orchestration_generates_chunk_handoff(tmp_path: Path) -> None
     sample = tmp_path / "sample.txt"
     sample.write_text("hello worker ingestion")
 
+    repository = InMemoryIngestionRepository()
     service = IngestionOrchestrationService(
-        repository=InMemoryIngestionRepository(),
+        repository=repository,
         parser=DoclingFirstParserService(),
         ocr_service=OCRService(),
         object_store=ObjectStoreClient(),
+        indexer=ChunkIndexingService(
+            repository=repository,
+            embedding_model_name="deterministic-hash-v1",
+        ),
     )
 
     result = service.run(
@@ -32,9 +38,11 @@ def test_ingestion_orchestration_generates_chunk_handoff(tmp_path: Path) -> None
         )
     )
 
-    assert result["status"] == "chunking"
+    assert result["status"] == "indexed"
     assert result["chunkCount"] == 1
+    assert result["vectorCount"] == 1
     assert result["chunks"][0]["text"].startswith("hello")
+    assert repository.embeddings["file-1"]
 
 
 def test_ocr_fallback_triggers_for_empty_pdf(tmp_path: Path) -> None:
@@ -47,6 +55,10 @@ def test_ocr_fallback_triggers_for_empty_pdf(tmp_path: Path) -> None:
         parser=DoclingFirstParserService(),
         ocr_service=OCRService(),
         object_store=ObjectStoreClient(),
+        indexer=ChunkIndexingService(
+            repository=repository,
+            embedding_model_name="deterministic-hash-v1",
+        ),
     )
 
     result = service.run(
@@ -62,3 +74,4 @@ def test_ocr_fallback_triggers_for_empty_pdf(tmp_path: Path) -> None:
 
     assert result["parserUsed"] in {"ocr_stub", "ocr_tesseract"}
     assert any(event["event_name"] == "ocr_fallback_triggered" for event in repository.events)
+    assert result["status"] == "indexed"

@@ -55,9 +55,16 @@ class IngestionPersistenceRepository:
                 sheet_name TEXT,
                 section_heading TEXT,
                 token_estimate INTEGER,
+                embedding_json JSONB,
                 metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
+            """
+        )
+        cursor.execute(
+            """
+            ALTER TABLE ingestion_chunks
+            ADD COLUMN IF NOT EXISTS embedding_json JSONB
             """
         )
         cursor.execute(
@@ -161,9 +168,10 @@ class IngestionPersistenceRepository:
                             sheet_name,
                             section_heading,
                             token_estimate,
+                            embedding_json,
                             metadata
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb)
                         """,
                         (
                             chunk_id,
@@ -175,6 +183,7 @@ class IngestionPersistenceRepository:
                             chunk.sheet_name,
                             chunk.section_heading,
                             chunk.token_estimate,
+                            json.dumps({}),
                             json.dumps(chunk.metadata),
                         ),
                     )
@@ -210,6 +219,25 @@ class IngestionPersistenceRepository:
             conn.commit()
         return handoff_records
 
+    def store_embeddings(
+        self,
+        *,
+        file_id: str,
+        embeddings_by_chunk_id: dict[str, dict],
+    ) -> None:
+        with self._connection() as conn:
+            with conn.cursor() as cursor:
+                for chunk_id, payload in embeddings_by_chunk_id.items():
+                    cursor.execute(
+                        """
+                        UPDATE ingestion_chunks
+                        SET embedding_json = %s::jsonb
+                        WHERE id = %s AND file_id = %s
+                        """,
+                        (json.dumps(payload), chunk_id, file_id),
+                    )
+            conn.commit()
+
     def record_event(self, file_id: str, event_name: str, metadata: dict | None = None) -> None:
         with self._connection() as conn:
             with conn.cursor() as cursor:
@@ -228,6 +256,7 @@ class InMemoryIngestionRepository:
         self.documents: dict[str, dict] = {}
         self.events: list[dict] = []
         self.chunks: dict[str, list[ChunkHandoffRecord]] = {}
+        self.embeddings: dict[str, dict[str, dict]] = {}
 
     def create_document(self, job: IngestionJob) -> None:
         self.documents[job.file_id] = {"status": FileStatus.QUEUED.value, "job": job}
@@ -260,3 +289,11 @@ class InMemoryIngestionRepository:
         self.events.append(
             {"file_id": file_id, "event_name": event_name, "metadata": metadata or {}}
         )
+
+    def store_embeddings(
+        self,
+        *,
+        file_id: str,
+        embeddings_by_chunk_id: dict[str, dict],
+    ) -> None:
+        self.embeddings[file_id] = embeddings_by_chunk_id

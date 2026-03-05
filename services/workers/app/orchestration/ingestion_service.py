@@ -3,6 +3,7 @@ from __future__ import annotations
 from celery.exceptions import Retry
 
 from services.shared.enums import FileStatus
+from services.workers.app.indexing.service import ChunkIndexingService
 from services.workers.app.models import IngestionJob
 from services.workers.app.parsers.base import ParseRequest
 from services.workers.app.parsers.docling_service import DoclingFirstParserService
@@ -19,11 +20,13 @@ class IngestionOrchestrationService:
         parser: DoclingFirstParserService,
         ocr_service: OCRService,
         object_store: ObjectStoreClient,
+        indexer: ChunkIndexingService,
     ) -> None:
         self._repository = repository
         self._parser = parser
         self._ocr_service = ocr_service
         self._object_store = object_store
+        self._indexer = indexer
 
     def run(self, job: IngestionJob) -> dict:
         self._repository.create_document(job)
@@ -54,13 +57,22 @@ class IngestionOrchestrationService:
             metadata=parsed.metadata,
         )
         chunk_records = self._repository.store_parsed_output(job, parsed)
+        self._repository.update_document_status(job.file_id, status=FileStatus.EMBEDDING)
+        vector_count = self._indexer.index_chunks(file_id=job.file_id, chunks=chunk_records)
+        self._repository.update_document_status(job.file_id, status=FileStatus.INDEXED)
+        self._repository.record_event(
+            job.file_id,
+            "indexing_completed",
+            {"vectorCount": vector_count},
+        )
 
         handoff = {
             "fileId": job.file_id,
             "workspaceId": job.workspace_id,
-            "status": FileStatus.CHUNKING.value,
+            "status": FileStatus.INDEXED.value,
             "parserUsed": parsed.parser_used,
             "chunkCount": len(chunk_records),
+            "vectorCount": vector_count,
             "chunks": [
                 {
                     "chunkId": record.chunk_id,
