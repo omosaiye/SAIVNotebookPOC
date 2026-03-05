@@ -16,7 +16,7 @@ web:
 	npm run web:dev
 
 api:
-	uvicorn services.api.app.main:app --host 0.0.0.0 --port 8000 --reload
+	uvicorn services.api.app.main:app --host 0.0.0.0 --port $${API_PORT:-8010} --reload
 
 worker:
 	celery -A services.workers.app.celery_app:celery_app worker --loglevel=info

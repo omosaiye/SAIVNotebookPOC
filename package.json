@@ -10,7 +10,7 @@
     "infra:up": "docker compose --env-file infra/docker/.env -f infra/docker/docker-compose.yml up -d",
     "infra:down": "docker compose --env-file infra/docker/.env -f infra/docker/docker-compose.yml down",
     "web:dev": "npm run dev --workspace @private-llm/web",
-    "api:dev": "uvicorn services.api.app.main:app --host 0.0.0.0 --port 8000 --reload",
+    "api:dev": "uvicorn services.api.app.main:app --host 0.0.0.0 --port ${API_PORT:-8010} --reload",
     "worker:dev": "celery -A services.workers.app.celery_app:celery_app worker --loglevel=info",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",

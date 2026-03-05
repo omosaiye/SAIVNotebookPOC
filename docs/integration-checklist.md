@@ -16,7 +16,7 @@
    - `docker compose --env-file infra/docker/.env -f infra/docker/docker-compose.yml up -d`
 4. Start API:
    - `set -a; source .env; set +a`
-   - `uvicorn services.api.app.main:app --host 0.0.0.0 --port 8000 --reload`
+   - `uvicorn services.api.app.main:app --host 0.0.0.0 --port 8010 --reload`
 5. Start workers:
    - `set -a; source .env; set +a`
    - `celery -A services.workers.app.celery_app:celery_app worker --loglevel=info`
@@ -27,12 +27,12 @@
 
 1. Run `./scripts/smoke/startup-smoke.sh`.
 2. Confirm infra is healthy with `docker compose -f infra/docker/docker-compose.yml ps`.
-3. Hit API health endpoint: `curl http://localhost:8000/health`.
+3. Hit API health endpoint: `curl http://localhost:8010/health`.
 4. Verify auth login and profile:
-   - `curl -X POST http://localhost:8000/api/v1/auth/login -H 'Content-Type: application/json' -d '{"email":"owner@local.dev","password":"dev-password"}'`
-   - `curl http://localhost:8000/api/v1/auth/me -H 'Authorization: Bearer <token>'`
+   - `curl -X POST http://localhost:8010/api/v1/auth/login -H 'Content-Type: application/json' -d '{"email":"owner@local.dev","password":"dev-password"}'`
+   - `curl http://localhost:8010/api/v1/auth/me -H 'Authorization: Bearer <token>'`
 5. Verify chat query route exists:
-   - `curl -X POST http://localhost:8000/api/v1/chat/query -H 'Authorization: Bearer <token>' -H 'X-Workspace-Id: ws_1' -H 'Content-Type: application/json' -d '{"workspaceId":"ws_1","chatSessionId":null,"mode":"grounded","query":"test","scope":"workspace","fileIds":[]}'`
+   - `curl -X POST http://localhost:8010/api/v1/chat/query -H 'Authorization: Bearer <token>' -H 'X-Workspace-Id: ws_1' -H 'Content-Type: application/json' -d '{"workspaceId":"ws_1","chatSessionId":null,"mode":"grounded","query":"test","scope":"workspace","fileIds":[]}'`
 
 ## 3. Seed data steps
 
@@ -60,3 +60,7 @@ Not implemented in Session A. Downstream sessions should provide:
    - `./scripts/fixtures/load_golden_corpus.sh`
 3. Execute Session J integration suites:
    - `.venv/bin/pytest -q services/api/tests/test_admin_api.py services/api/tests/test_e2e_workflows.py`
+
+## 6. POC runbook
+
+- For an end-to-end startup/demo/shutdown flow, use [docs/poc-ready-runbook.md](/Users/dadsomosaiye/devProjects/SAIVNotebookPOC/docs/poc-ready-runbook.md).

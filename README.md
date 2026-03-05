@@ -77,7 +77,7 @@ API:
 
 ```bash
 set -a; source .env; set +a
-uvicorn services.api.app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn services.api.app.main:app --host 0.0.0.0 --port 8010 --reload
 ```
 
 Worker:
@@ -110,7 +110,7 @@ What this validates:
 1. Login:
 
 ```bash
-curl -s -X POST http://localhost:8000/api/v1/auth/login \
+curl -s -X POST http://localhost:8010/api/v1/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"owner@local.dev","password":"dev-password"}'
 ```

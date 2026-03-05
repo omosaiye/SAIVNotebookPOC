@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 GOLDEN_DIR="${ROOT_DIR}/tests/fixtures/golden/input"
 
-API_BASE_URL="${API_BASE_URL:-http://localhost:8000}"
+API_BASE_URL="${API_BASE_URL:-http://localhost:8010}"
 AUTH_EMAIL="${AUTH_EMAIL:-owner@local.dev}"
 AUTH_PASSWORD="${AUTH_PASSWORD:-dev-password}"
 WORKSPACE_ID="${WORKSPACE_ID:-ws_1}"
