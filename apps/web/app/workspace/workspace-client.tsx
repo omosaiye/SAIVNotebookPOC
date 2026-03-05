@@ -233,6 +233,9 @@ export default function WorkspaceClientPage() {
             <Link href="/chat" className="button ghost" style={{ textDecoration: "none", textAlign: "center" }}>
               Chat
             </Link>
+            <Link href="/admin" className="button ghost" style={{ textDecoration: "none", textAlign: "center" }}>
+              Admin
+            </Link>
           </nav>
         </aside>
 

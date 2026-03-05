@@ -530,6 +530,9 @@ export default function ChatClientPage() {
             <Link href="/chat" className="button brand" style={{ textDecoration: "none", textAlign: "center" }}>
               Chat
             </Link>
+            <Link href="/admin" className="button ghost" style={{ textDecoration: "none", textAlign: "center" }}>
+              Admin
+            </Link>
           </nav>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>

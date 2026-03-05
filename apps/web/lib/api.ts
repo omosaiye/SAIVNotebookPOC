@@ -74,6 +74,54 @@ export type UploadAndAskStatusResponse = {
   updatedAt: string;
 };
 
+export type AdminSettingsResponse = {
+  llmEndpoint: string;
+  llmModel: string;
+  embeddingModelName: string;
+  chunkSize: number;
+  chunkOverlap: number;
+  maxFileSizeMb: number;
+};
+
+export type AdminSettingsPatchRequest = Partial<AdminSettingsResponse>;
+
+export type AdminIngestionJobRow = {
+  fileId: string;
+  fileName: string;
+  status: FileStatus;
+  uploadedAt: string;
+  queueJobId: string | null;
+  enqueuedAt: string | null;
+  lastAction: string | null;
+  lastActionAt: string | null;
+  errorMessage: string | null;
+  retryEligible: boolean;
+};
+
+export type AdminIngestionLogRow = {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  createdAt: string;
+  metadata: Record<string, unknown>;
+};
+
+export type AdminMetricsResponse = {
+  statusCounts: Record<string, number>;
+  queueDepth: number;
+  uploadsTotal: number;
+  chatQueryCount: number;
+  uploadAndAskCount: number;
+  answersGeneratedCount: number;
+  answersWithCitationsPercent: number;
+  stageTiming: {
+    avgQueueAgeSeconds: number | null;
+    oldestQueueAgeSeconds: number | null;
+    avgInFlightAgeSeconds: number | null;
+  };
+};
+
 async function parseError(response: Response): Promise<never> {
   let detail = `Request failed with status ${response.status}`;
   try {
@@ -268,4 +316,77 @@ export async function getUploadAndAskRequest(
     await parseError(response);
   }
   return (await response.json()) as UploadAndAskStatusResponse;
+}
+
+export async function getAdminSettings(session: AuthSession): Promise<AdminSettingsResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/settings`, {
+    headers: authHeaders(session)
+  });
+  if (!response.ok) {
+    await parseError(response);
+  }
+  return (await response.json()) as AdminSettingsResponse;
+}
+
+export async function updateAdminSettings(
+  session: AuthSession,
+  payload: AdminSettingsPatchRequest
+): Promise<AdminSettingsResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/settings`, {
+    method: "PATCH",
+    headers: {
+      ...authHeaders(session),
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    await parseError(response);
+  }
+  return (await response.json()) as AdminSettingsResponse;
+}
+
+export async function listAdminIngestionJobs(
+  session: AuthSession,
+  options?: { includeDeleted?: boolean; limit?: number }
+): Promise<AdminIngestionJobRow[]> {
+  const params = new URLSearchParams();
+  if (options?.includeDeleted) {
+    params.set("includeDeleted", "true");
+  }
+  if (options?.limit) {
+    params.set("limit", String(options.limit));
+  }
+  const suffix = params.size > 0 ? `?${params.toString()}` : "";
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/ingestion-jobs${suffix}`, {
+    headers: authHeaders(session)
+  });
+  if (!response.ok) {
+    await parseError(response);
+  }
+  return (await response.json()) as AdminIngestionJobRow[];
+}
+
+export async function listAdminIngestionLogs(
+  session: AuthSession,
+  limit = 100
+): Promise<AdminIngestionLogRow[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/ingestion-logs?limit=${limit}`, {
+    headers: authHeaders(session)
+  });
+  if (!response.ok) {
+    await parseError(response);
+  }
+  return (await response.json()) as AdminIngestionLogRow[];
+}
+
+export async function getAdminMetrics(session: AuthSession): Promise<AdminMetricsResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/metrics`, {
+    headers: authHeaders(session)
+  });
+  if (!response.ok) {
+    await parseError(response);
+  }
+  return (await response.json()) as AdminMetricsResponse;
 }

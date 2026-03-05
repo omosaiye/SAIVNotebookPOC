@@ -18,6 +18,10 @@ def get_file_repository() -> InMemoryFileRepository:
     return _FILE_REPOSITORY
 
 
+def get_ingestion_queue() -> InMemoryIngestionQueue:
+    return _INGESTION_QUEUE
+
+
 def get_file_service() -> FileService:
     settings = load_api_settings()
     return FileService(

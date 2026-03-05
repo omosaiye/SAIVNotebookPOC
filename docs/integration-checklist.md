@@ -48,3 +48,15 @@ Not implemented in Session A. Downstream sessions should provide:
 - API now exposes file library routes under `/api/v1/files` (upload, list, detail, status, reprocess, delete).
 - Worker contains only `health.ping` Celery task. Sessions D/E/G will add ingestion/indexing jobs.
 - No database migrations are included yet. Session B/C should add schema migrations.
+
+## 5. Session J verification
+
+1. Open `/admin` and confirm:
+   - settings are loaded from API
+   - ingestion jobs table is populated after uploads
+   - ingestion logs show recent events
+   - metrics cards render queue depth and citation percentage
+2. Run golden fixture loader:
+   - `./scripts/fixtures/load_golden_corpus.sh`
+3. Execute Session J integration suites:
+   - `.venv/bin/pytest -q services/api/tests/test_admin_api.py services/api/tests/test_e2e_workflows.py`
