@@ -150,8 +150,10 @@ Implemented by Session C:
 - `POST /api/v1/files/{fileId}/reprocess`
 - `DELETE /api/v1/files/{fileId}`
 
-Reserved contract routes for downstream sessions (shape frozen, behavior pending):
+Implemented by Session F:
 - `POST /api/v1/chat/query`
+
+Implemented by Session G:
 - `POST /api/v1/upload-and-ask`
 - `GET /api/v1/upload-and-ask/{requestId}`
 

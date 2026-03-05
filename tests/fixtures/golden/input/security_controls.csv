@@ -1,0 +1,4 @@
+control_id,control_name,owner,review_cycle_days
+SC-01,Workspace Boundary Enforcement,Security Team,30
+SC-02,Citation Provenance Validation,Platform Team,14
+SC-03,Ingestion Job Retry Monitoring,SRE Team,7

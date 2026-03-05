@@ -7,6 +7,17 @@ Implemented in Session A:
 - US-002: shared typed configuration for API and workers
 - US-003: frozen shared enums and contract models
 
+Implemented in Session B:
+- US-004: baseline auth login and bearer session validation
+- US-005: workspace membership authorization dependency for protected endpoints
+- US-006: audit event recording for auth and API mutating actions
+
+Implemented in Session F:
+- US-021: chat session and message persistence APIs (in-memory)
+- US-022, US-023, US-024: retrieval, prompting, and LLM adapter interfaces with local stub implementations
+- US-025: grounded query endpoint at `POST /api/v1/chat/query`
+- US-026: citation assembly from retrieved chunks
+
 ## Repository layout
 
 - `apps/web` - Next.js startup scaffold
@@ -94,7 +105,25 @@ What this validates:
 - Python service modules compile
 - Docker Compose configuration resolves
 
-## 5. Baseline quality commands
+## 5. Auth quickstart (development seed user)
+
+1. Login:
+
+```bash
+curl -s -X POST http://localhost:8000/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"owner@local.dev","password":"dev-password"}'
+```
+
+2. Use `accessToken` as:
+
+```bash
+Authorization: Bearer <accessToken>
+```
+
+3. Pass `X-Workspace-Id` for protected routes.
+
+## 6. Baseline quality commands
 
 TypeScript:
 
@@ -112,14 +141,15 @@ python3 -m ruff format --check .
 python3 -m pytest
 ```
 
-## 6. Contract references
+## 7. Contract references
 
 - Frozen enums and payload contracts: `docs/contracts.md`
 - Session boundaries: `docs/session-ownership.md`
 - Integration runbook: `docs/integration-checklist.md`
 
-## 7. Intentional stubs in this phase
+## 8. Intentional stubs in this phase
 
-- No upload, parsing, retrieval, or chat business logic
+- Retrieval and LLM execution currently use local stub implementations pending full production adapters
+- Frontend product UX is still scaffold-level (Sessions H/I pending)
 - No production deployment manifests
 - No database migrations yet

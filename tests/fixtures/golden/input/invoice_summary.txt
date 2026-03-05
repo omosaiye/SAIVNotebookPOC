@@ -1,0 +1,5 @@
+Invoice Summary
+
+Invoice INV-2026-015 was issued on February 28, 2026.
+Line items include platform operations, retrieval tuning, and observability support.
+Total due is 12450 USD with net-30 payment terms.
