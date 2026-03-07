@@ -1,0 +1,5 @@
+Private LLM Employee Handbook
+
+All staff members must handle workspace documents as confidential material.
+Data may only be retrieved for the active workspace and must include grounded citations.
+Security incidents must be escalated within one hour of detection.

@@ -1,0 +1,28 @@
+{
+  "fileStatus": [
+    "uploaded",
+    "queued",
+    "parsing",
+    "OCR_fallback",
+    "chunking",
+    "embedding",
+    "indexed",
+    "failed",
+    "deleting",
+    "deleted"
+  ],
+  "pendingRequestStatus": [
+    "waiting_for_index",
+    "executing",
+    "completed",
+    "failed",
+    "cancelled"
+  ],
+  "chatMode": [
+    "grounded"
+  ],
+  "uploadAndAskScope": [
+    "uploaded_files_only",
+    "workspace"
+  ]
+}

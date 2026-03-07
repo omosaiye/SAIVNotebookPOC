@@ -1,0 +1,62 @@
+# Integration Checklist
+
+## 1. Startup sequence
+
+1. Copy env templates:
+   - `cp infra/docker/.env.example infra/docker/.env`
+   - `cp .env.example .env`
+   - `cp apps/web/.env.example apps/web/.env.local`
+   - `cp services/api/.env.example services/api/.env`
+   - `cp services/workers/.env.example services/workers/.env`
+2. Install dependencies:
+   - `npm install`
+   - `python3 -m venv .venv && source .venv/bin/activate`
+   - `pip install -r requirements.txt`
+3. Start infrastructure:
+   - `docker compose --env-file infra/docker/.env -f infra/docker/docker-compose.yml up -d`
+4. Start API:
+   - `set -a; source .env; set +a`
+   - `uvicorn services.api.app.main:app --host 0.0.0.0 --port 8000 --reload`
+5. Start workers:
+   - `set -a; source .env; set +a`
+   - `celery -A services.workers.app.celery_app:celery_app worker --loglevel=info`
+6. Start web:
+   - `npm run web:dev`
+
+## 2. Smoke path
+
+1. Run `./scripts/smoke/startup-smoke.sh`.
+2. Confirm infra is healthy with `docker compose -f infra/docker/docker-compose.yml ps`.
+3. Hit API health endpoint: `curl http://localhost:8000/health`.
+4. Verify auth login and profile:
+   - `curl -X POST http://localhost:8000/api/v1/auth/login -H 'Content-Type: application/json' -d '{"email":"owner@local.dev","password":"dev-password"}'`
+   - `curl http://localhost:8000/api/v1/auth/me -H 'Authorization: Bearer <token>'`
+5. Verify chat query route exists:
+   - `curl -X POST http://localhost:8000/api/v1/chat/query -H 'Authorization: Bearer <token>' -H 'X-Workspace-Id: ws_1' -H 'Content-Type: application/json' -d '{"workspaceId":"ws_1","chatSessionId":null,"mode":"grounded","query":"test","scope":"workspace","fileIds":[]}'`
+
+## 3. Seed data steps
+
+Not implemented in Session A. Downstream sessions should provide:
+- workspace/user seed utilities
+- sample file upload fixtures
+- ingestion and retrieval fixtures
+
+## 4. Known stubs and planned replacement
+
+- Web app home page is scaffold-only. Session H/I will replace with product UX.
+- API protected routes now require `Authorization: Bearer <token>` plus `X-Workspace-Id`.
+- API now exposes file library routes under `/api/v1/files` (upload, list, detail, status, reprocess, delete).
+- Worker contains only `health.ping` Celery task. Sessions D/E/G will add ingestion/indexing jobs.
+- No database migrations are included yet. Session B/C should add schema migrations.
+
+## 5. Session J verification
+
+1. Open `/admin` and confirm:
+   - settings are loaded from API
+   - ingestion jobs table is populated after uploads
+   - ingestion logs show recent events
+   - metrics cards render queue depth and citation percentage
+2. Run golden fixture loader:
+   - `./scripts/fixtures/load_golden_corpus.sh`
+3. Execute Session J integration suites:
+   - `.venv/bin/pytest -q services/api/tests/test_admin_api.py services/api/tests/test_e2e_workflows.py`
